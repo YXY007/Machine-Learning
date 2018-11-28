@@ -6,7 +6,8 @@ import breeze.stats.distributions.{Rand, RandBasis}
 object KMeansPlusPlus {
 
   /**
-    * 使用Kmeans++来初始化中心点
+    * Run K-means++ init on the weighted point set `data`.
+    * Adopted from LocalKMeans in Spark (Apache License)
     */
   def kMeansPlusPlusWeighted(data: IndexedSeq[DenseVector[Double]],
                              weights: IndexedSeq[Double],
@@ -15,7 +16,8 @@ object KMeansPlusPlus {
 
 
   /**
-    * 使用Kmeans++来初始化中心点
+    * Run K-means++ init on the weighted point set `data`.
+    * Adopted from LocalKMeans in Spark (Apache License)
     */
   def kMeansPlusPlus(data: IndexedSeq[DenseVector[Double]],
                      k: Int
@@ -31,12 +33,7 @@ object KMeansPlusPlus {
 
     val uniform = rand.uniform
 
-  /** 随机产生第一个点作为第一个类的初始中心点
-    * 计算每个点到初始点的距离，取最长的点作为第二个中心点
-    * 计算每个点到已确定的中心点的距离，取最短距离作为d
-    * 取d最大的点作为下一个中心点
-    * 以此类推
-    */
+    // Initialize centers by sampling using the k-means++ procedure.
     centers(0) = pickWeighted(uniform, data, idx2Weight,totalWeights)
     val costArray = data.map { dp =>
       val p2 = centers(0) - dp
@@ -60,7 +57,7 @@ object KMeansPlusPlus {
         centers(i) = data(j - 1)
       }
 
-      // 更新损失函数
+      // update costArray
       for (p <- data.indices) {
         costArray(p) = math.min({
           val p2 = centers(i) - data(p)

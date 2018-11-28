@@ -5,41 +5,47 @@ import clustering.scores.{NormalizedMutualInformation, PairCountingF1Measure}
 import data.DataIO
 
 
+/**
+  * This is a minimal example for the Nr-Kmeans algorithm proposed in the paper
+  * 'Discovering Non-Redundant K-means Clusterings in Optimal Subspaces'
+  */
 object Example extends App {
-  // 生成随机数
+  //Initialize random number generator
     implicit val rnd = RandBasis.withSeed(42)
 
+  //We need to initialize netlib the correct parameter may vary for your system!
+  //For details see: https://github.com/fommil/netlib-java
   if (System.getProperty("com.github.fommil.netlib.BLAS") == null) {
     System.setProperty("com.github.fommil.netlib.BLAS", "com.github.fommil.netlib.NativeRefBLAS")
   }
 
-  // 数据集
-  // CSV文件:
-  // 每行是一个数据点，前几个数是label，后面的是features
-  // 行间由;隔开
-  // 以下导入了3个数据集，需要用其中一个的时候需要注释另外两个数据集
+  //The dataset we want to cluster.
+  // (Format is a simple CSV-based text file:
+  // Each line represents a data point. Some columns represent class labels (each label column represents a different possible partition)
+  // other columns represent features;
+  //Columns are separated by a semicolon
 
-  // 小人数据集，有3个子空间，每个子空间k的值为3
+  //Stickfigures dataset with 3 subspaces
   val datasetFile = file"dataset/stickfigures_3sub.data"
   val datasetName = "Stickfigures"
-  val labelColumns =  IndexedSeq(0, 1, 2) //前三个值是在三个子空间里的label
+  val labelColumns =  IndexedSeq(0, 1, 2) //first three columns are the class labels (integer) of the different subspaces
   val clustersPerSubspace = IndexedSeq(3,3,3)
-  val noiseSpace = true //是否需要噪声空间
+  val noiseSpace = true //We also want an additional noise space
 
 
-  //ALOI数据集
+  //Intro example
 //  val datasetFile = file"dataset/aloiIntro.data"
 //  val datasetName = "ALOI-Intro"
-//  val labelColumns =  IndexedSeq(0, 1) //前三个值是在三个子空间里的label
+//  val labelColumns =  IndexedSeq(0, 1) //first three columns are the class labels (integer) of the different subspaces
 //  val clustersPerSubspace = IndexedSeq(2,2)
-//  val noiseSpace = true //是否需要噪声空间
+//  val noiseSpace = true //We also want an additional noise space
 
- // PCA数据集
+ // Intro example with PCA as discussed in the paper
 // val datasetFile = file"dataset/aloiIntro_pca.data"
 //  val datasetName = "ALOI-Intro with PCA"
-//  val labelColumns =  IndexedSeq(0, 1) //前三个值是在三个子空间里的label
+//  val labelColumns =  IndexedSeq(0, 1) //first three columns are the class labels (integer) of the different subspaces
 //  val clustersPerSubspace = IndexedSeq(2,2)
-//  val noiseSpace = true //是否需要噪声空间
+//  val noiseSpace = true //We also want an additional noise space
 
   //Load data and perform standardization (zero mean and unit variance for all features)
   val (data, labels) = DataIO.loadCsvWithIntMultiLabelsAsSeq(datasetFile,labelColumns)
@@ -51,7 +57,7 @@ object Example extends App {
     }
   }
 
-  //跑十次，取最优解
+  //We run Nr-Kmeans 10 times and take the candidate with the elast costs
   val resC = (for {
     i <- 1 to 10
   } yield {

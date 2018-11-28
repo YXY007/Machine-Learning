@@ -12,10 +12,10 @@ object DataMatrixUtils {
   /**
     *
     * @param m
-    * @return 二维数组
+    * @return a row major 2d array
     */
   def to2dArray(m: DenseMatrix[Double]): Array[Array[Double]] = {
-    //TODO make  查看哪一个比较快
+    //TODO make  Check which one is faster
     //m(*, ::).map(_.toArray).toArray
     val d = Array.ofDim[Double](m.rows, m.cols)
     for {

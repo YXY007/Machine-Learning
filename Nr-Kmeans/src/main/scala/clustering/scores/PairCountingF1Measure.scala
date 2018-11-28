@@ -1,16 +1,16 @@
 package clustering.scores
 
 /**
-  * 按组合计算 F1-Measure
-  * 根据论文参考第一条： "Evaluation of Clusterings - Metrics and Visual Support"
+  * Pair counting F1-Measure
+  * According to "Evaluation of Clusterings - Metrics and Visual Support"
   * by Elke Achtert, Sascha Goldhofer, Hans-Peter Kriegel, Erich Schubert, Arthur Zimek
   * ICDE 2012
   *
-  * Wei 在论文"Generalized Independent Subspace Clustering", ICDM 2016 中也使用了这种计算方法
+  * Wei used this measure in his paper "Generalized Independent Subspace Clustering", ICDM 2016
   */
 object PairCountingF1Measure {
 
-  //一个聚类的情况
+  //For a signle clustering
   def forClusterMap[RealClId, FoundClId](realClusters: Map[RealClId, Set[Int]], foundClusters: Map[FoundClId, Set[Int]], nrOfDps: Int): Double = {
     forClusterSets(IndexedSeq(realClusters.values.toIndexedSeq), IndexedSeq(foundClusters.values.toIndexedSeq), nrOfDps)
   }
@@ -96,7 +96,7 @@ object PairCountingF1Measure {
 }
 
 /*
-原始matlab代码
+The original Matlab code
 
 function f=SameCluster(objectA, objectB)
 col=size(objectA,2);

@@ -8,12 +8,12 @@ import scala.math._
 object EmpiricalStatistics {
 
   /**
-    *  数据统计：计算均值和散射值
+    *  Provides simple stats for partitions like mean and scatter of each partition
     *
-    * @param data             已分好子空间的数据
-    * @param labels           标签
-    * @param dpCounter        每个类数据点的数量
-    * @param label2ClusterMap 类标签和索引的映射
+    * @param data             the data partitioned according to the labels seq
+    * @param labels           the labels
+    * @param dpCounter        this contains the number of data points for each cluster
+    * @param label2ClusterMap this object maps between cluster labels and cluster indices
     * @return
     */
   def dataMeanAndScatter(data: IndexedSeq[DenseVector[Double]], labels: IndexedSeq[Int], dpCounter: IndexedSeq[Int], label2ClusterMap: Map[Int, Int]): IndexedSeq[(DenseVector[Double], DenseMatrix[Double])] = {
@@ -21,6 +21,7 @@ object EmpiricalStatistics {
     val dims = data.head.length
     val dpRange = data.indices
     val meansAndScatters = Array.fill(label2ClusterMap.size)((DenseVector.zeros[Double](dims), DenseMatrix.zeros[Double](dims, dims)))
+    //TODO we might want parallelize this if nrofClusters and #data is big enough
     for {
       dpIdx <- dpRange
     } {
@@ -53,14 +54,13 @@ object EmpiricalStatistics {
     meansAndScatters
   }
 
-  // 计算均值
   def dataMean(data: Seq[DenseVector[Double]]): DenseVector[Double] = {
     val tmpV = DenseVector.zeros[Double](data.head.length)
     data.foreach(dv => tmpV :+= dv)
     tmpV / data.size.toDouble
   }
 
-  // 计算均值和协方差
+
   def dataMeanAndCov(data: Seq[DenseVector[Double]], adjustCov: Boolean) = {
     val mean = dataMean(data)
     val meaned = data.map(r => r - mean)
@@ -68,14 +68,12 @@ object EmpiricalStatistics {
     (mean, cov)
   }
 
-  // 计算均值和散射
   def dataMeanAndScatter(data: Seq[DenseVector[Double]]) = {
     val mean = dataMean(data)
     val scatter = determineScatterUncentered(data, mean)
     (mean, scatter)
   }
 
-  // 计算协方差
   def dataCov(data: Seq[DenseVector[Double]], assumeCentered: Boolean, adjustCov: Boolean) = {
     if (assumeCentered) {
       determineCov(data, adjustCov)
@@ -84,7 +82,6 @@ object EmpiricalStatistics {
     }
   }
 
-  // 计算协方差
   private def determineCov(centered: Seq[DenseVector[Double]], adjustCov: Boolean): DenseMatrix[Double] = {
     val scatter = determineScatterCentered(centered)
     if (adjustCov) {
@@ -94,7 +91,6 @@ object EmpiricalStatistics {
     }
   }
 
-  //计算散射
   private def determineScatterCentered(centered: Seq[DenseVector[Double]]): DenseMatrix[Double] = {
     val dims = centered.head.length
     val scatter = DenseMatrix.zeros[Double](dims, dims)
@@ -118,7 +114,7 @@ object EmpiricalStatistics {
   }
 
 
-  //计算散射
+
   private def determineScatterUncentered(uncentered: Seq[DenseVector[Double]], mean: DenseVector[Double]): DenseMatrix[Double] = {
     val dims = mean.length
     val scatter = DenseMatrix.zeros[Double](dims, dims)

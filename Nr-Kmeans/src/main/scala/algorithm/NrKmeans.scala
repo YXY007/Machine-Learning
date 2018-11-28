@@ -9,9 +9,9 @@ import utils.matrix.MatrixUtils
 
 object NrKmeans {
 
-  val MAX_NR_OF_ITERATIONS = 50 // 最大迭代次数
-  val ROUNDS_WITHOUT_PRUNING_M = 4 //提前结束迭代的条件：加入连续四轮没有更新m，结束迭代
-  val MAX_NMI_DIFFERENCE = 0.0001 // 收敛条件，前后变化差
+  val MAX_NR_OF_ITERATIONS = 50
+  val ROUNDS_WITHOUT_PRUNING_M = 4
+  val MAX_NMI_DIFFERENCE = 0.0001
 
   def run(ks: IndexedSeq[Int], data: IndexedSeq[DenseVector[Double]], initSubspaceSizes: Option[IndexedSeq[Int]] = None,
           containsNoiseSpace: Boolean = true, fixedSubspaceSize: Boolean = false)(implicit rnd: RandBasis): NrkmeansConfig = {
@@ -48,10 +48,8 @@ object NrKmeans {
     currentConfig
   }
 
-  // 初始化
   def init(ks: IndexedSeq[Int], data: IndexedSeq[DenseVector[Double]], initSubspaceSizes: Option[IndexedSeq[Int]])(implicit rnd: RandBasis): NrkmeansConfig = {
     val nrOfDims = data.head.length
-    // 随机生成一个正交的旋转矩阵
     val randVt = NonRedHelpers.generateRandomV(nrOfDims)
     val nrOfSubspaces = ks.size
     val initmRanges = if (initSubspaceSizes.isDefined) {
@@ -59,7 +57,6 @@ object NrKmeans {
       assert(sizes.length == ks.length)
       assert(sizes.sum == nrOfDims)
       var firstDim = 0
-      // 把维度平均分配到每个子空间
       for {
         k <- 0 until nrOfSubspaces
       } yield {
@@ -78,10 +75,8 @@ object NrKmeans {
         range
       }
     }
-    // 旋转
     val rotData = data.map(dp => randVt * dp)
 
-    // 计算每个子空间里的P
     val initSubspaces = ks.zipWithIndex.map { case (k, ssIdx) =>
       val range = initmRanges(ssIdx)
       val proj = Projection(range, nrOfDims)
@@ -93,7 +88,6 @@ object NrKmeans {
     NrkmeansConfig(randVt, initSubspaces, data)
   }
 
-  // assignment step
   private def assignmentAndClusterStatistics(oldConfig: NrkmeansConfig): NrkmeansConfig = {
     val newSubspaces = oldConfig.subspaceClusterings.map { subspaceClustering =>
       NonRedHelpers.findClusterAssignmentSubspace(oldConfig.data, subspaceClustering, oldConfig.Vt)
@@ -101,7 +95,6 @@ object NrKmeans {
     oldConfig.copy(subspaceClusterings = newSubspaces)
   }
 
-  // 更新V
   private def updateRotation(oldConfig: NrkmeansConfig, adjustSubspaceDims: Boolean): NrkmeansConfig = {
     val totalNrOfDims = oldConfig.nrOfDims
     var remainingScatterSums = oldConfig.subspaceClusterings.map(s => (s.projection, s.sumOfScatterMatrices, s.nrOfClusters))
@@ -111,7 +104,7 @@ object NrKmeans {
       j <- 0 until (oldConfig.subspaceClusterings.length - 1)
     } yield {
       var (subAProj, subAScatterSum, _) = remainingScatterSums(0)
-      //根据Vt旋转
+      //rotate scattersum accroding to current Vt
       remainingScatterSums = for {
         i <- 1 until remainingScatterSums.length
       } yield {
@@ -121,12 +114,12 @@ object NrKmeans {
         val combinedpDims = pDimsA ++ pDimsB
         val inverseMap = combinedpDims.zipWithIndex.map(_.swap).toMap
 
-        //旋转散射
+        //rotate scattersum of i
         val combinedProj = Projection(combinedpDims, totalNrOfDims)
         val mapperVt = combinedProj.multiplyWithVt(newVt)
         val setup = {
           val a = mapperVt * (subAScatterSum - subBScatterSum) * mapperVt.t
-          (a + a.t) / 2d 
+          (a + a.t) / 2d //Ensure that the matrix is symmetric (numerical issue)
         }
         val eigRes = MatrixUtils.sortedEigSym(setup, ascending = true)
         val ranges = if (adjustSubspaceDims) {

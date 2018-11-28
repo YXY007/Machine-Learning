@@ -13,7 +13,7 @@ object NonRedHelpers extends NonRedHelpers
 trait NonRedHelpers {
 
   /**
-    * 随机产生一个有d个维度的旋转矩阵
+    * Generates a random rotation matrix (most likely a positive definite matrix) of size d
     */
   def generateRandomV(d: Int)(implicit rand: RandBasis): DenseMatrix[Double] = {
     val a = DenseMatrix.rand(d, d, rand.uniform)
@@ -24,8 +24,8 @@ trait NonRedHelpers {
   /**
     *
     * @param nrOfDims
-    * @param pDims    子空间到整个空间的映射，索引是是投影空间的索引，值是完整空间的索引
-    * @param rotation in column form 每一列代表一个数据点的映射方向
+    * @param pDims    represents a mapping between projected and full space, index is the index in the projected space, value is the index in the full space
+    * @param rotation in column form meaning each column represents the direction into which a datapoint is projected
     * @return
     */
   def expandRotation2Full(nrOfDims: Int, pDims: IndexedSeq[Int], rotation: DenseMatrix[Double]): DenseMatrix[Double] = {
@@ -51,7 +51,7 @@ trait NonRedHelpers {
   def subspaceClusteringInitializer(clusterCenterData: IndexedSeq[DenseVector[Double]],
                                     clusterStatsData: IndexedSeq[DenseVector[Double]],
                                     proj: Projection, k: Int, clusterSampler: (IndexedSeq[DenseVector[Double]], Int) => IndexedSeq[DenseVector[Double]]): SubspaceClustering = {
-    // 初始化
+    //Since retries of this method via recursion are very scarce, we do this each time
     val clusterCentersA = clusterSampler(clusterCenterData, k).zipWithIndex
     val labelsArrayA = new AtomicIntegerArray(clusterCenterData.length)
     val clusterCountsA = new AtomicIntegerArray(k)
@@ -91,7 +91,7 @@ trait NonRedHelpers {
 
 
   /**
-    * 进行assignment step，确定每个簇的中心和散射矩阵
+    * Performs one assignment step and redetermines the cluster means and scatter matrices
     *
     * @param data
     * @param subspaceClustering
@@ -148,7 +148,7 @@ trait NonRedHelpers {
   }
 
   /**
-    * 计算损失函数
+    * Determines the costs of the NR-Kmeans configuration
     */
   def costs(nrc: NrkmeansConfig): Double = {
     val Vt = nrc.Vt
@@ -170,13 +170,14 @@ trait NonRedHelpers {
 object SubspaceReferrer {
 
   /**
-    * 计算特征向量，更新各个子空间的维度
-    * 为了保证每个子空间第一个特征值对应的维度是最重要的，需要对特征值进行排序
+    * A function which takes a vector of eigenvalues and determines the range of each subspace.
+    * Thereby the ranges have to be ordered such that each Range starts with the index of the for this subspace most important
+    * vector!
     */
   type SubspaceReferrer = DenseVector[Double] => (Range, Range)
   /**
-    * 根据特征值确定新的m
-    * 把特征值小于1e-8的特征值对应的部分划分到噪声空间
+    * Determines the parameter m based on the eigenvalues.
+    * This function assumes that components with small negative eigenvalues should point towards the noise space
     */
   val pushDimsToSubB: DenseVector[Double] => (Range, Range) = { (eigenvals: DenseVector[Double]) =>
     val allEigVals = eigenvals.toArray
@@ -189,8 +190,8 @@ object SubspaceReferrer {
   }
 
   /**
-    * 把特征值为负的特征向量划分到子空间A，特征值为正的划分到子空间B
-    * 论文里特征值为0的可以放到任意一个子空间，这里统一划分到B
+    * Puts negative eigenvalues towards subspace A, positive eigenvalues towards subspace B.
+    * Zero eigenvalues are split between both but if uneven we put it into subspace B
     */
   val fairSubspaces: DenseVector[Double] => (Range, Range) = { (eigenvals: DenseVector[Double]) =>
     val allEigVals = eigenvals.toArray
@@ -206,7 +207,7 @@ object SubspaceReferrer {
       val lastZero = firstB - 1
       val nrOfZeros = lastZero - firstZero + 1
       if (nrOfZeros % 2 == 0) {
-        //偶数
+        //Even number
         val forEeach = nrOfZeros / 2
         (0 to (lastA + forEeach), (firstB - forEeach) until nrOfDims reverse)
       } else {

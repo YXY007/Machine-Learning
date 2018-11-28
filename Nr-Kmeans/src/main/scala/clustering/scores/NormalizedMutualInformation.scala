@@ -7,9 +7,9 @@ import scala.math._
 import scala.reflect.ClassTag
 
 /**
-  * 基于已相互归一化的信息对于模型聚类表现的评估
-  * 与scikit learn类似
-  * 链接：https://github.com/scikit-learn/scikit-learn/blob/412996f/sklearn/metrics/cluster/supervised.py#L712
+  * Evaluation of the clsutering performance of models based on the normalized mutual information
+  * Same as in scikit learn
+  * See https://github.com/scikit-learn/scikit-learn/blob/412996f/sklearn/metrics/cluster/supervised.py#L712
   */
 object NormalizedMutualInformation extends AbstractScore {
 

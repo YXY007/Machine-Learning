@@ -18,10 +18,11 @@ object MatrixUtils {
 
 
   /**
-    * 特征值重组,结果从小到大排序
+    * Performs an eigenvalue decomposition,
+    * but the result is sorted ascending from smallest to biggest (the breeze eig function sorts also ascending but the absolute value!)
     *
     * @param data
-    * @param absoluteValue true：以绝对值排序，false：直接排序
+    * @param absoluteValue if true we sort based on the absolute value
     */
   def sortedEig(data: DenseMatrix[Double], ascending: Boolean, absoluteValue: Boolean): DenseEig = {
     val res = eig(data)
@@ -55,8 +56,10 @@ object MatrixUtils {
 
 
   /**
-    * 特征值重组，结果从小到大排序
-    * @param data 一个对称矩阵
+    * Performs an eigenvalue decomposition,
+    * but the result is sorted ascending from smallest to biggest (the breeze eig function does not sort!)
+    *
+    * @param data The matrix has to be symmetric!
     */
   def sortedEigSym(data: DenseMatrix[Double], ascending: Boolean): DenseEigSym = {
     val res = eigSym(data)
@@ -82,7 +85,8 @@ object MatrixUtils {
 
 
   /**
-    * 重构矩阵, 再重新计算特征向量
+    * Applies an operation to the eigenvalues of a matrix.
+    * It decomposes the matrix, applies the operation and multiplies the eigenvectors again.
     *
     * @param m
     * @param f

@@ -49,14 +49,14 @@ case class Projection(pDims: IndexedSeq[Int], nrOfFullDim: Int) {
   }
 
   /**
-    * 计算P.t * V.t
+    * Yields the same matrix as when we would multiply P.t * V.t
     */
   def multiplyWithVt(Vt: DenseMatrix[Double]) = Vt(pDims, ::).toDenseMatrix
 }
 
 object Projection {
   /**
-    * 返回子空间到整空间的映射
+    * Returns a projection representing the complement of the given projection to the full space
     *
     * @return
     */
@@ -67,7 +67,7 @@ object Projection {
 }
 
 /**
-  * @param 映射矩阵
+  * @param projection Projection Matrix
   */
 case class SubspaceClustering(projection: Projection,
                               clusters: IndexedSeq[ClusterStats],
